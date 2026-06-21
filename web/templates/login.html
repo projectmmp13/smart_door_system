@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Smart Door Admin{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">
+        <div class="login-header">
+            <i class="fas fa-shield-alt"></i>
+            <h1>Smart Door Security</h1>
+            <p>Admin Dashboard Login</p>
+        </div>
+        
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="username">
+                    <i class="fas fa-user"></i>
+                    Username
+                </label>
+                <input type="text" id="username" name="username" required 
+                       placeholder="Enter your username" autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">
+                    <i class="fas fa-lock"></i>
+                    Password
+                </label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Enter your password" autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
+            </button>
+        </form>
+        
+        <div class="login-footer">
+            <p><i class="fas fa-info-circle"></i> Contact system administrator for access</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

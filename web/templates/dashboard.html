@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Door Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    <p>System overview and statistics</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ total_users }}</h3>
+            <p>Total Users</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon bg-success">
+            <i class="fas fa-user-check"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ active_users }}</h3>
+            <p>Active Users</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon bg-info">
+            <i class="fas fa-door-open"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.successful or 0 }}</h3>
+            <p>Successful Access (7 days)</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon bg-danger">
+            <i class="fas fa-ban"></i>
+        </div>
+        <div class="stat-info">
+            <h3>{{ stats.denied or 0 }}</h3>
+            <p>Denied Access (7 days)</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-clock"></i> Recent Activity</h2>
+        <a href="{{ url_for('logs') }}" class="btn btn-sm btn-secondary">View All</a>
+    </div>
+    <div class="card-body">
+        {% if recent_logs %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Event</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td>{{ log.access_date }} {{ log.access_time }}</td>
+                    <td>{{ log.user_name or 'Unknown' }}</td>
+                    <td>{{ log.event_type }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if log.result == 'SUCCESS' else 'danger' }}">
+                            {{ log.result }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No recent activity</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

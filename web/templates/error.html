@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Smart Door Admin{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h1>Oops!</h1>
+        <p>{{ error }}</p>
+        <a href="{{ url_for('dashboard') if session.get('admin_id') else url_for('login') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i>
+            Go to {{ 'Dashboard' if session.get('admin_id') else 'Login' }}
+        </a>
+    </div>
+</div>
+{% endblock %}

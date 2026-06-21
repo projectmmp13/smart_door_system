@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Smart Door Admin{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.chart-subtitle {
+    color: #718096;
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.peak-hours {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.peak-hour-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.peak-hour-card h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.peak-hour-card p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.user-activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-activity-table th,
+.user-activity-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #9dbce4;
+}
+
+.user-activity-table th {
+    background-color: #f7fafc;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.success-rate {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.success-rate.high { background-color: #c6f6d5; color: #22543d; }
+.success-rate.medium { background-color: #fef5e7; color: #744210; }
+.success-rate.low { background-color: #fed7d7; color: #742a2a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+    <p>Comprehensive access analytics and insights</p>
+</div>
+
+<div class="analytics-grid">
+    <!-- Daily Access Trends -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <div>
+                <h3 class="chart-title">Daily Access Trends</h3>
+                <p class="chart-subtitle">Last 30 days</p>
+            </div>
+        </div>
+        <canvas id="dailyChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- Hourly Access Pattern -->
+    <div class="chart-container">
+        <div class="chart-header">
+            <div>
+                <h3 class="chart-title">Hourly Access Pattern</h3>
+                <p class="chart-subtitle">Last 7 days (24-hour format)</p>
+            </div>
+        </div>
+        <canvas id="hourlyChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<!-- Peak Access Hours -->
+<div class="chart-container">
+    <div class="chart-header">
+        <div>
+            <h3 class="chart-title">Peak Access Hours</h3>
+            <p class="chart-subtitle">Top 5 busiest hours in the last 30 days</p>
+        </div>
+    </div>
+    <div class="peak-hours" id="peakHoursContainer">
+        <!-- Peak hours will be populated by JavaScript -->
+    </div>
+</div>
+
+<!-- User Activity -->
+<div class="chart-container">
+    <div class="chart-header">
+        <div>
+            <h3 class="chart-title">User Activity Summary</h3>
+            <p class="chart-subtitle">Top 20 most active users in the last 30 days</p>
+        </div>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="user-activity-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Employee ID</th>
+                    <th>Total Access</th>
+                    <th>Successful Access</th>
+                    <th>Success Rate</th>
+                </tr>
+            </thead>
+            <tbody id="userActivityTable">
+                <!-- User activity will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Daily Access Trends Chart
+    const dailyData = {{ daily_stats|tojson }};
+    const dailyLabels = dailyData.map(item => item.access_date);
+    const dailySuccessful = dailyData.map(item => item.successful || 0);
+    const dailyFailed = dailyData.map(item => item.failed || 0);
+    const dailyDenied = dailyData.map(item => item.denied || 0);
+
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Successful',
+                data: dailySuccessful,
+                borderColor: '#48bb78',
+                backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Failed',
+                data: dailyFailed,
+                borderColor: '#f56565',
+                backgroundColor: 'rgba(245, 101, 101, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Denied',
+                data: dailyDenied,
+                borderColor: '#ed8936',
+                backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Hourly Access Pattern Chart
+    const hourlyData = {{ hourly_stats|tojson }};
+    const hourlyLabels = hourlyData.map(item => `${item.hour}:00`);
+    const hourlyTotal = hourlyData.map(item => item.total || 0);
+
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    new Chart(hourlyCtx, {
+        type: 'bar',
+        data: {
+            labels: hourlyLabels,
+            datasets: [{
+                label: 'Total Access Attempts',
+                data: hourlyTotal,
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: '#667eea',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Peak Hours
+    const peakHours = {{ peak_hours|tojson }};
+    const peakContainer = document.getElementById('peakHoursContainer');
+    peakHours.forEach((peak, index) => {
+        const card = document.createElement('div');
+        card.className = 'peak-hour-card';
+        card.innerHTML = `
+            <h4>${peak.hour}:00</h4>
+            <p>${peak.total_access} accesses</p>
+        `;
+        peakContainer.appendChild(card);
+    });
+
+    // User Activity Table
+    const userActivity = {{ user_activity|tojson }};
+    const tableBody = document.getElementById('userActivityTable');
+    userActivity.forEach(user => {
+        const row = document.createElement('tr');
+        const successRate = user.access_count > 0 ? (user.successful_access / user.access_count * 100).toFixed(1) : 0;
+        let rateClass = 'low';
+        if (successRate >= 80) rateClass = 'high';
+        else if (successRate >= 60) rateClass = 'medium';
+
+        row.innerHTML = `
+            <td>${user.user_name}</td>
+            <td>${user.employee_id}</td>
+            <td>${user.access_count}</td>
+            <td>${user.successful_access}</td>
+            <td><span class="success-rate ${rateClass}">${successRate}%</span></td>
+        `;
+        tableBody.appendChild(row);
+    });
+});
+</script>
+{% endblock %}

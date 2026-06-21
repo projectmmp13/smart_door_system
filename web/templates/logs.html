@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Access Logs - Smart Door Admin{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-history"></i> Access Logs</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2><i class="fas fa-filter"></i> Filters</h2>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="filter-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user_search">Search User</label>
+                    <input type="text" id="user_search" name="user_search" 
+                           value="{{ user_search or '' }}" 
+                           placeholder="Enter name or employee ID">
+                </div>
+                <div class="form-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="end_date">End Date</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="result">Result</label>
+                    <select id="result" name="result">
+                        <option value="">All</option>
+                        <option value="SUCCESS" {% if result_filter == 'SUCCESS' %}selected{% endif %}>Success</option>
+                        <option value="DENIED" {% if result_filter == 'DENIED' %}selected{% endif %}>Denied</option>
+                        <option value="FAILED" {% if result_filter == 'FAILED' %}selected{% endif %}>Failed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                    <a href="{{ url_for('logs') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if logs %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Employee ID</th>
+                    <th>Event</th>
+                    <th>Result</th>
+                    <th>Face</th>
+                    <th>Fingerprint</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.access_date }}</td>
+                    <td>{{ log.access_time }}</td>
+                    <td>{{ log.user_name or 'Unknown' }}</td>
+                    <td>{{ log.employee_id or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'info' if log.event_type == 'ENTRY' else 'secondary' }}">
+                            {{ log.event_type }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if log.result == 'SUCCESS' else 'danger' if log.result == 'DENIED' else 'warning' }}">
+                            {{ log.result }}
+                        </span>
+                    </td>
+                    <td>
+                        <i class="fas fa-{{ 'check text-success' if log.face_match else 'times text-danger' }}"></i>
+                    </td>
+                    <td>
+                        <i class="fas fa-{{ 'check text-success' if log.fingerprint_match else 'times text-danger' }}"></i>
+                    </td>
+                    <td>{{ log.failure_reason or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="{{ url_for('logs', page=page-1, start_date=start_date, end_date=end_date, result=result_filter, user_search=user_search) }}" 
+               class="btn btn-sm btn-secondary">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+            {% endif %}
+            
+            <span class="page-info">Page {{ page }}</span>
+            
+            {% if logs|length == 50 %}
+            <a href="{{ url_for('logs', page=page+1, start_date=start_date, end_date=end_date, result=result_filter, user_search=user_search) }}" 
+               class="btn btn-sm btn-secondary">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <h3>No Logs Found</h3>
+            <p>No access logs match your filter criteria.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

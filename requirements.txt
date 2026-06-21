@@ -1,0 +1,28 @@
+# Smart Door Security System - Python Dependencies
+
+# Core dependencies
+numpy>=1.21.0
+opencv-python>=4.5.0
+Pillow>=9.0.0
+
+# Face recognition
+face-recognition>=1.3.0
+dlib>=19.22.0
+
+# Web framework
+Flask>=2.0.0
+bcrypt>=4.0.0
+
+# Serial communication (for fingerprint sensor)
+pyserial>=3.5
+
+# Database
+# SQLite is included with Python
+
+# GPIO (for Raspberry Pi - optional)
+# RPi.GPIO>=0.7.0
+
+# Development/Testing (optional)
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=4.0.0
