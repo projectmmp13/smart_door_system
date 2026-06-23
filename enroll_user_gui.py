@@ -517,12 +517,12 @@ Instructions:
         self.face_locations_preview = []
 
         try:
-            self.update_status("Starting face enrollment...", "blue")
+            self.root.after(0, lambda: self.update_status("Starting face enrollment...", "blue"))
 
             # Start camera if not running
             if not self.camera.is_running():
                 if not self.camera.start():
-                    self.update_status("Failed to start camera", "red")
+                    self.root.after(0, lambda: self.update_status("Failed to start camera", "red"))
                     return
 
             self.log_message("Please look at the camera...")
@@ -532,13 +532,11 @@ Instructions:
             def progress_callback(captured, total):
                 if self.stop_enrollment:
                     return
-                # Stamp the time — preview uses this to infer face-detected state
                 self.enrollment_last_sample_time = time.time()
-                percentage = (captured / total) * 100
-                self.progress_var.set(percentage)
-                self.update_sample_dots(captured, total)
-                self.update_status(f"Captured {captured}/{total} samples...", "blue")
-                self.root.update()
+                self.progress_var.set((captured / total) * 100)
+                self.root.after(0, lambda: self.update_sample_dots(captured, total))
+                self.root.after(0, lambda: self.update_status(
+                    f"Captured {captured}/{total} samples...", "blue"))
 
             success, message = self.face_enrollment.enroll_face(
                 user_id=self.selected_user_id,
@@ -547,23 +545,22 @@ Instructions:
             )
 
             if success:
-                self.update_status("Face enrollment completed successfully!", "green")
+                self.root.after(0, lambda: self.update_status("Face enrollment completed successfully!", "green"))
                 self.progress_var.set(100)
                 self.root.after(0, lambda: self.update_sample_dots(5, 5))
-                self.log_message(f"✓ {message}")
-                messagebox.showinfo("Success", f"Face enrollment completed!\n{message}")
+                self.root.after(0, lambda: self.log_message(f"✓ {message}"))
+                self.root.after(0, lambda: messagebox.showinfo("Success", f"Face enrollment completed!\n{message}"))
             else:
-                self.update_status("Face enrollment failed", "red")
-                self.log_message(f"✗ {message}")
-                messagebox.showerror("Error", f"Face enrollment failed:\n{message}")
+                self.root.after(0, lambda: self.update_status("Face enrollment failed", "red"))
+                self.root.after(0, lambda: self.log_message(f"✗ {message}"))
+                self.root.after(0, lambda: messagebox.showerror("Error", f"Face enrollment failed:\n{message}"))
 
-            # Refresh user list to show updated status
-            self.load_users()
+            self.root.after(0, self.load_users)
 
         except Exception as e:
-            self.update_status(f"Enrollment error: {str(e)}", "red")
-            self.log_message(f"Error: {str(e)}")
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            self.root.after(0, lambda: self.update_status(f"Enrollment error: {str(e)}", "red"))
+            self.root.after(0, lambda: self.log_message(f"Error: {str(e)}"))
+            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred: {str(e)}"))
 
         finally:
             # Always deactivate the face-detection overlay
@@ -647,13 +644,11 @@ Instructions:
             def face_progress_callback(captured, total):
                 if self.stop_enrollment:
                     return
-                # Stamp the time — preview uses this to infer face-detected state
                 self.enrollment_last_sample_time = time.time()
-                percentage = (captured / 10) * 100  # Face phase is 50 % of total
-                self.progress_var.set(percentage)
-                self.update_sample_dots(captured, total)
-                self.update_status(f"Face: {captured}/{total} samples...", "blue")
-                self.root.update()
+                self.progress_var.set((captured / 10) * 100)  # Face phase = 50 % of total
+                self.root.after(0, lambda: self.update_sample_dots(captured, total))
+                self.root.after(0, lambda: self.update_status(
+                    f"Face: {captured}/{total} samples...", "blue"))
 
             face_success, face_message = self.face_enrollment.enroll_face(
                 user_id=self.selected_user_id,
@@ -668,12 +663,12 @@ Instructions:
             self.root.after(0, lambda: self.face_status_label.config(text="", foreground='gray'))
 
             if face_success:
-                self.log_message(f"✓ Face enrollment successful: {face_message}")
+                self.root.after(0, lambda: self.log_message(f"✓ Face enrollment successful: {face_message}"))
                 self.root.after(0, lambda: self.update_sample_dots(5, 5))
                 self.progress_var.set(50)
             else:
-                self.log_message(f"✗ Face enrollment failed: {face_message}")
-                self.update_status("Face enrollment failed", "red")
+                self.root.after(0, lambda: self.log_message(f"✗ Face enrollment failed: {face_message}"))
+                self.root.after(0, lambda: self.update_status("Face enrollment failed", "red"))
             
             # Step 2: Fingerprint enrollment
             self.log_message("=" * 50)
@@ -681,17 +676,15 @@ Instructions:
             self.log_message("=" * 50)
             
             if not self.fingerprint_manager.start():
-                self.update_status("Failed to connect to fingerprint sensor", "red")
+                self.root.after(0, lambda: self.update_status("Failed to connect to fingerprint sensor", "red"))
                 return
             
             def fp_progress_callback(message):
                 if self.stop_enrollment:
                     return
-                percentage = 50 + (self.progress_var.get() / 2)  # Add to 50%
-                self.progress_var.set(percentage)
-                self.update_status(f"Fingerprint: {message}", "blue")
-                self.log_message(f"  {message}")
-                self.root.update()
+                self.progress_var.set(50 + (self.progress_var.get() / 2))
+                self.root.after(0, lambda: self.update_status(f"Fingerprint: {message}", "blue"))
+                self.root.after(0, lambda: self.log_message(f"  {message}"))
             
             fp_success, fp_message, fp_id = self.fingerprint_manager.enroll(
                 user_id=self.selected_user_id,
@@ -700,34 +693,35 @@ Instructions:
             )
             
             if fp_success:
-                self.log_message(f"✓ Fingerprint enrollment successful: {fp_message}")
-                self.log_message(f"  Fingerprint ID: {fp_id}")
+                self.root.after(0, lambda: self.log_message(f"✓ Fingerprint enrollment successful: {fp_message}"))
+                self.root.after(0, lambda: self.log_message(f"  Fingerprint ID: {fp_id}"))
                 self.progress_var.set(100)
             else:
-                self.log_message(f"✗ Fingerprint enrollment failed: {fp_message}")
-                self.update_status("Fingerprint enrollment failed", "red")
+                self.root.after(0, lambda: self.log_message(f"✗ Fingerprint enrollment failed: {fp_message}"))
+                self.root.after(0, lambda: self.update_status("Fingerprint enrollment failed", "red"))
             
             # Summary
-            self.log_message("=" * 50)
-            self.log_message("ENROLLMENT SUMMARY")
-            self.log_message("=" * 50)
-            self.log_message(f"Face:        {'✓ Enrolled' if face_success else '✗ Failed'}")
-            self.log_message(f"Fingerprint: {'✓ Enrolled' if fp_success else '✗ Failed'}")
+            self.root.after(0, lambda: self.log_message("=" * 50))
+            self.root.after(0, lambda: self.log_message("ENROLLMENT SUMMARY"))
+            self.root.after(0, lambda: self.log_message("=" * 50))
+            self.root.after(0, lambda: self.log_message(
+                f"Face:        {'✓ Enrolled' if face_success else '✗ Failed'}"))
+            self.root.after(0, lambda: self.log_message(
+                f"Fingerprint: {'✓ Enrolled' if fp_success else '✗ Failed'}"))
             
             if face_success and fp_success:
-                self.update_status("Full enrollment completed successfully!", "green")
-                messagebox.showinfo("Success", "Full enrollment completed successfully!\nUser is now fully enrolled.")
+                self.root.after(0, lambda: self.update_status("Full enrollment completed successfully!", "green"))
+                self.root.after(0, lambda: messagebox.showinfo("Success", "Full enrollment completed successfully!\nUser is now fully enrolled."))
             else:
-                self.update_status("Enrollment incomplete", "orange")
-                messagebox.showwarning("Warning", "Enrollment incomplete. Some biometrics may have failed.")
+                self.root.after(0, lambda: self.update_status("Enrollment incomplete", "orange"))
+                self.root.after(0, lambda: messagebox.showwarning("Warning", "Enrollment incomplete. Some biometrics may have failed."))
             
-            # Refresh user list to show updated status
-            self.load_users()
+            self.root.after(0, self.load_users)
             
         except Exception as e:
-            self.update_status(f"Enrollment error: {str(e)}", "red")
-            self.log_message(f"Error: {str(e)}")
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            self.root.after(0, lambda: self.update_status(f"Enrollment error: {str(e)}", "red"))
+            self.root.after(0, lambda: self.log_message(f"Error: {str(e)}"))
+            self.root.after(0, lambda: messagebox.showerror("Error", f"An error occurred: {str(e)}"))
 
         finally:
             # Ensure face-detection overlay is always deactivated on exit

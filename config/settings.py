@@ -15,13 +15,13 @@ DATABASE_PATH = BASE_DIR / "database" / "smart_door.db"
 
 # Camera settings
 # Use 0 for the default webcam or '/dev/video0' on Raspberry Pi systems.
-CAMERA_INDEX = 0  # Default camera index or device path for Raspberry Pi
+CAMERA_INDEX = 0  # USB camera index (0 for default webcam, or /dev/video0)
 CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 CAMERA_FPS = 30
 
 # Face recognition settings
-FACE_RECOGNITION_TOLERANCE = 0.6  # Lower = stricter matching
+FACE_RECOGNITION_TOLERANCE = 0.45  # Lower = stricter matching (Euclidean distance on 128-d encodings)
 FACE_DETECTION_MODEL = "hog"  # "hog" for CPU, "cnn" for GPU
 FACE_ENCODING_JITTERS = 1  # Higher = more accurate but slower
 
@@ -30,9 +30,12 @@ FINGERPRINT_PORT = "COM3"  # Change based on your system
 FINGERPRINT_BAUD_RATE = 57600
 FINGERPRINT_TIMEOUT = 5  # seconds
 
-# Door control settings
-DOOR_UNLOCK_DURATION = 10  # seconds before auto-lock (changed from 5 to 10)
-DOOR_RELAY_PIN = 17  # GPIO pin for relay (Raspberry Pi)
+# Door control settings (servo motor)
+DOOR_SERVO_PIN = 17           # GPIO pin for servo signal (PWM)
+DOOR_SERVO_OPEN_ANGLE = 90    # Servo angle when door is unlocked (degrees)
+DOOR_SERVO_CLOSED_ANGLE = 0   # Servo angle when door is locked (degrees)
+DOOR_UNLOCK_DURATION = 10     # seconds before auto-lock (was 5)
+DOOR_SERVO_PWM_FREQ = 50      # PWM frequency in Hz (standard for servos)
 
 # Web server settings
 WEB_HOST = "127.0.0.1"
@@ -75,7 +78,7 @@ SENSOR_CONNECTION_TIMEOUT = 10  # seconds
 # Authentication settings
 AUTH_RETRY_ATTEMPTS = 3
 AUTH_RETRY_DELAY = 2  # seconds
-CONFIDENCE_THRESHOLD = 0.6  # Minimum confidence for face match
+CONFIDENCE_THRESHOLD = 0.75  # Minimum confidence (1 - distance) for a valid face match
 
 # Door settings
 DOOR_STATE_CHECK_INTERVAL = 1  # seconds

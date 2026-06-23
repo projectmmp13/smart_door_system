@@ -42,7 +42,6 @@ source venv/bin/activate
 
 ```bash
 pip install -r requirements.txt
-```
 
 **Note for Windows users**: Installing `face-recognition` may require Visual Studio Build Tools. If you encounter errors, install CMake and dlib first:
 
