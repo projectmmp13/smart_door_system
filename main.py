@@ -41,7 +41,8 @@ except ImportError:
 
 # Project imports
 from config.settings import (
-    GUI_UPDATE_INTERVAL, GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT
+    GUI_UPDATE_INTERVAL, GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT,
+    UNKNOWN_FACE_EMAIL_THRESHOLD, EMAIL_COOLDOWN
 )
 from database.db_manager import (
     DatabaseManager, UserRepository, AccessLogRepository, SystemLogRepository
@@ -51,6 +52,8 @@ from modules.face_recognition_module import (
 )
 from modules.door_control import DoorController, DoorState, DoorMonitor
 from modules.auth_engine import AuthState
+from modules.email_notifier import send_unknown_face_alert_async
+
 
 # Configure logging
 logging.basicConfig(
@@ -162,6 +165,9 @@ class SmartDoorGUI:
         self._auth_state = AuthState.IDLE
         self._matched_face_user_id = None
         self._auth_start_time = None
+        self.unknown_face_count = 0
+        self.last_email_sent_time = 0.0
+
 
         # GUI variables
         self.camera_image = None
@@ -567,6 +573,7 @@ class SmartDoorGUI:
         if current_state == AuthState.IDLE:
             # Looking for face match
             if face_result.status == FaceStatus.FACE_MATCHED:
+                self.unknown_face_count = 0
                 # Verify user is active
                 user = self.user_repo.get_by_id(face_result.user_id)
                 if user and user.get('is_active', False):
@@ -584,6 +591,18 @@ class SmartDoorGUI:
 
                     # Grant access immediately (skip fingerprint in simulation mode)
                     self._grant_access(user)
+
+            elif face_result.status == FaceStatus.UNKNOWN_FACE:
+                self.unknown_face_count += 1
+                if self.unknown_face_count >= UNKNOWN_FACE_EMAIL_THRESHOLD:
+                    now = time.time()
+                    if now - self.last_email_sent_time > EMAIL_COOLDOWN:
+                        self._log_activity(f"Unknown face detected {UNKNOWN_FACE_EMAIL_THRESHOLD} times - sending email alert")
+                        logger.warning(f"Unknown face detected {UNKNOWN_FACE_EMAIL_THRESHOLD} times - sending email alert")
+                        send_unknown_face_alert_async(frame=face_result.frame)
+                        self.last_email_sent_time = now
+                    self.unknown_face_count = 0
+
 
         elif current_state == AuthState.FACE_MATCHED:
             # Check for timeout
